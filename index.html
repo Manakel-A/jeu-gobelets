@@ -3,11 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>Jeu des Gobelets</title>
 
 <style>
-
 body{
     margin:0;
     font-family:Arial;
@@ -16,12 +14,10 @@ body{
     text-align:center;
 }
 
-/* titre */
 h1{
     margin-top:30px;
 }
 
-/* zone des gobelets */
 .zone{
     display:flex;
     justify-content:center;
@@ -29,113 +25,100 @@ h1{
     margin-top:80px;
 }
 
-/* un gobelet */
 .gobelet{
     width:90px;
     height:130px;
     background:#b5651d;
     border-radius:0 0 25px 25px;
-
     cursor:pointer;
-
     transition:0.3s;
 }
 
-/* effet quand souris passe dessus */
 .gobelet:hover{
     transform:translateY(-10px);
 }
 
-/* bouton */
 button{
     margin-top:50px;
-
     padding:12px 25px;
-
     border:none;
     border-radius:10px;
-
     background:#00b894;
     color:white;
-
     font-size:18px;
-
     cursor:pointer;
 }
 
-/* message */
 #message{
     margin-top:30px;
     font-size:24px;
 }
-
 </style>
 </head>
 
 <body>
 
 <h1>🎮 Jeu des 3 Gobelets</h1>
-
 <p>Trouve la balle cachée !</p>
 
-<!-- les 3 gobelets -->
 <div class="zone">
-
     <div class="gobelet" onclick="choisir(0)"></div>
-
     <div class="gobelet" onclick="choisir(1)"></div>
-
     <div class="gobelet" onclick="choisir(2)"></div>
-
 </div>
 
-<!-- bouton melanger -->
-<button onclick="melanger()">
-    Mélanger
-</button>
+<button onclick="debut()">Mélanger</button>
 
-<!-- message -->
 <div id="message"></div>
 
 <script>
 
-/* position de la balle */
 let balle = 0;
+let bloque = true;
 
-/* fonction melanger */
-function melanger(){
+function debut(){
+    let g = document.querySelectorAll(".gobelet");
 
-    /* nombre aleatoire 0 1 ou 2 */
     balle = Math.floor(Math.random() * 3);
 
-    /* message */
-    document.getElementById("message").innerText =
-    "🤔 Où est la balle ?";
+    g[balle].style.background = "red";
+
+    document.getElementById("message").innerText = "👀 Regarde bien !";
+
+    bloque = true;
+
+    setTimeout(() => {
+        melanger();
+    }, 6000);
 }
 
-/* quand joueur clique */
+function melanger(){
+
+    let g = document.querySelectorAll(".gobelet");
+
+    for(let i = 0; i < 3; i++){
+        g[i].style.background = "#b5651d";
+    }
+
+    balle = Math.floor(Math.random() * 3);
+
+    document.getElementById("message").innerText = "🤔 À toi de jouer !";
+
+    bloque = false;
+}
+
 function choisir(numero){
 
-    /* si trouvé */
+    if(bloque) return;
+
     if(numero === balle){
-
-        document.getElementById("message").innerText =
-        "🎉 Bravo tu as gagné !";
-
+        document.getElementById("message").innerText = "🎉 Bravo !";
+    } else {
+        document.getElementById("message").innerText = "❌ Perdu !";
     }
-
-    /* sinon */
-    else{
-
-        document.getElementById("message").innerText =
-        "❌ Raté !";
-
-    }
-
 }
 
-/* lancer le jeu au debut */
-melanger();
+debut();
 
 </script>
 
