@@ -1,10 +1,9 @@
-//mon jeu XO
 <!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Jeu XO</title>
+<title>XO Game Pro</title>
 
 <style>
 
@@ -17,7 +16,17 @@ body{
 }
 
 h1{
-    margin-top:30px;
+    margin-top:20px;
+}
+
+#info{
+    font-size:20px;
+    margin-top:10px;
+}
+
+#score{
+    margin-top:10px;
+    font-size:18px;
 }
 
 #jeu{
@@ -25,7 +34,7 @@ h1{
     grid-template-columns:repeat(3,100px);
     gap:10px;
     justify-content:center;
-    margin-top:50px;
+    margin-top:30px;
 }
 
 .case{
@@ -38,7 +47,6 @@ h1{
     align-items:center;
     font-size:40px;
     cursor:pointer;
-    transition:0.3s;
 }
 
 .case:hover{
@@ -46,19 +54,18 @@ h1{
 }
 
 #message{
-    margin-top:30px;
-    font-size:24px;
+    margin-top:20px;
+    font-size:22px;
 }
 
 button{
-    margin-top:20px;
-    padding:12px 20px;
+    margin-top:15px;
+    padding:10px 20px;
     border:none;
     border-radius:10px;
     background:#00b894;
     color:white;
     cursor:pointer;
-    font-size:16px;
 }
 
 </style>
@@ -66,175 +73,168 @@ button{
 
 <body>
 
-<h1>Jeu XO</h1>
+<h1>Jeu XO Pro</h1>
+
+<div id="info">Mode : Joueur vs Ordinateur</div>
+
+<div id="score">X : 0 | O : 0</div>
 
 <div id="jeu"></div>
 
 <div id="message"></div>
 
-<button onclick="reset()">Nouvelle Partie</button>
+<button onclick="reset()">Restart</button>
 
 <script>
+
 let grille = ["","","","","","","","",""];
 
 let actif = true;
 
-let mode = prompt(
-"Choisis un mode :\n1 = Joueur vs Joueur\n2 = Joueur vs Ordinateur"
-);
-
-// symboles
-let symboleJoueur1 = "X";
-let symboleJoueur2 = "O";
-
 let joueurActuel = "X";
 
-// combinaisons gagnantes
+let scoreX = 0;
+let scoreO = 0;
+
 const combinaisons = [
-
-    [0,1,2],
-    [3,4,5],
-    [6,7,8],
-
-    [0,3,6],
-    [1,4,7],
-    [2,5,8],
-
-    [0,4,8],
-    [2,4,6]
+    [0,1,2],[3,4,5],[6,7,8],
+    [0,3,6],[1,4,7],[2,5,8],
+    [0,4,8],[2,4,6]
 ];
 
-// créer les cases
 let jeu = document.getElementById("jeu");
 
-for(let i = 0; i < 9; i++){
+// création cases
+for(let i=0;i<9;i++){
 
     let div = document.createElement("div");
 
     div.classList.add("case");
 
-    div.setAttribute("data-index", i);
+    div.dataset.index = i;
 
-    div.addEventListener("click", jouer);
+    div.onclick = jouer;
 
     jeu.appendChild(div);
 }
 
-document.getElementById("message").innerText =
-"Joueur " + joueurActuel + " commence";
-
 function jouer(e){
 
-    let index = e.target.getAttribute("data-index");
+    let i = e.target.dataset.index;
 
-    // empêcher de rejouer sur la même case
-    if(grille[index] !== "" || !actif){
+    if(grille[i] !== "" || !actif) return;
 
-        return;
-    }
+    faireCoup(i, "X");
 
-    faireCoup(index, joueurActuel);
-
-    // mode ordinateur
-    if(
-        mode == "2" &&
-        joueurActuel === symboleJoueur2 &&
-        actif
-    ){
-
-        setTimeout(ordinateur, 500);
-    }
+    if(actif) setTimeout(ordinateur, 400);
 }
 
-function faireCoup(index, symbole){
+function faireCoup(i, symbole){
 
-    grille[index] = symbole;
+    grille[i] = symbole;
 
-    document.querySelectorAll(".case")[index]
-    .innerText = symbole;
+    document.querySelectorAll(".case")[i].innerText = symbole;
 
-    // victoire
     if(checkWin(symbole)){
 
-        document.getElementById("message").innerText =
-        "Joueur " + symbole + " gagne !";
-
         actif = false;
+
+        if(symbole === "X") scoreX++;
+        else scoreO++;
+
+        updateScore();
+
+        document.getElementById("message")
+        .innerText = symbole + " gagne !";
 
         return;
     }
 
-    // match nul
     if(!grille.includes("")){
 
-        document.getElementById("message").innerText =
-        "🤝 Match nul !";
-
         actif = false;
+
+        document.getElementById("message")
+        .innerText = "Match nul !";
 
         return;
     }
 
-    // changer joueur
-    joueurActuel = symbole === "X" ? "O" : "X";
-
-    document.getElementById("message").innerText =
-    "Joueur " + joueurActuel + " joue";
+    joueurActuel = (symbole === "X") ? "O" : "X";
 }
 
 function ordinateur(){
 
-    let casesVides = [];
+    if(!actif) return;
 
-    for(let i = 0; i < grille.length; i++){
+    // IA simple intelligente
+    let move = bestMove();
 
+    faireCoup(move, "O");
+}
+
+function bestMove(){
+
+    // 1. gagner si possible
+    for(let i=0;i<9;i++){
         if(grille[i] === ""){
-
-            casesVides.push(i);
+            grille[i] = "O";
+            if(checkWin("O")){
+                grille[i] = "";
+                return i;
+            }
+            grille[i] = "";
         }
     }
 
-    let choix =
-    casesVides[Math.floor(Math.random() * casesVides.length)];
+    // 2. bloquer X
+    for(let i=0;i<9;i++){
+        if(grille[i] === ""){
+            grille[i] = "X";
+            if(checkWin("X")){
+                grille[i] = "";
+                return i;
+            }
+            grille[i] = "";
+        }
+    }
 
-    faireCoup(choix, symboleJoueur2);
+    // 3. aléatoire
+    let vides = [];
+    for(let i=0;i<9;i++){
+        if(grille[i] === "") vides.push(i);
+    }
+
+    return vides[Math.floor(Math.random()*vides.length)];
 }
 
-function checkWin(symbole){
+function checkWin(s){
 
-    return combinaisons.some(c => {
-
-        return grille[c[0]] === symbole &&
-               grille[c[1]] === symbole &&
-               grille[c[2]] === symbole;
+    return combinaisons.some(c=>{
+        return grille[c[0]]===s &&
+               grille[c[1]]===s &&
+               grille[c[2]]===s;
     });
+}
+
+function updateScore(){
+
+    document.getElementById("score")
+    .innerText = "X : " + scoreX + " | O : " + scoreO;
 }
 
 function reset(){
 
     grille = ["","","","","","","","",""];
-
     actif = true;
-
-    // échange des symboles
-    [symboleJoueur1, symboleJoueur2] =
-    [symboleJoueur2, symboleJoueur1];
-
-    // X commence toujours
     joueurActuel = "X";
 
     document.querySelectorAll(".case")
     .forEach(c => c.innerText = "");
 
-    document.getElementById("message").innerText =
-    "Nouvelle partie ! Joueur " + joueurActuel + " commence";
-
-    // si l'ordinateur possède X
-    if(mode == "2" && symboleJoueur2 === "X"){
-
-        setTimeout(ordinateur, 500);
-    }
+    document.getElementById("message").innerText = "";
 }
+
 </script>
 
 </body>
