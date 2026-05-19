@@ -1,10 +1,10 @@
-//mon jeu xo
 <!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Jeu XO</title>
+
+<title>Jeu XO Pro</title>
 
 <style>
 
@@ -48,10 +48,29 @@ h1{
     align-items:center;
     font-size:40px;
     cursor:pointer;
+    transition:0.2s;
 }
 
 .case:hover{
     background:#3b3b55;
+}
+
+#gagnant{
+    color:white;
+}
+
+.gagnant{
+    background:#00b894 !important;
+    animation:flash 0.5s infinite alternate;
+}
+
+@keyframes flash{
+    from{
+        transform:scale(1);
+    }
+    to{
+        transform:scale(1.1);
+    }
 }
 
 #message{
@@ -67,6 +86,12 @@ button{
     background:#00b894;
     color:white;
     cursor:pointer;
+    font-size:16px;
+    margin-left:5px;
+}
+
+#modeBtn{
+    background:#0984e3;
 }
 
 </style>
@@ -82,9 +107,13 @@ button{
 
 <div id="jeu"></div>
 
-<div id="message"></div>
+<div id="message">Tour : X</div>
 
 <button onclick="reset()">Restart</button>
+
+<button id="modeBtn" onclick="changerMode()">
+Changer Mode
+</button>
 
 <script>
 
@@ -97,6 +126,8 @@ let joueurActuel = "X";
 let scoreX = 0;
 let scoreO = 0;
 
+let modeIA = true;
+
 const combinaisons = [
     [0,1,2],[3,4,5],[6,7,8],
     [0,3,6],[1,4,7],[2,5,8],
@@ -105,7 +136,7 @@ const combinaisons = [
 
 let jeu = document.getElementById("jeu");
 
-// création cases
+// création des cases
 for(let i=0;i<9;i++){
 
     let div = document.createElement("div");
@@ -125,23 +156,34 @@ function jouer(e){
 
     if(grille[i] !== "" || !actif) return;
 
-    faireCoup(i, "X");
+    faireCoup(i, joueurActuel);
 
-    if(actif) setTimeout(ordinateur, 400);
+    // mode ordinateur
+    if(modeIA){
+
+        if(actif && joueurActuel === "O"){
+
+            setTimeout(ordinateur,400);
+        }
+    }
 }
 
 function faireCoup(i, symbole){
 
     grille[i] = symbole;
 
-    document.querySelectorAll(".case")[i].innerText = symbole;
+    document.querySelectorAll(".case")[i]
+    .innerText = symbole;
 
     if(checkWin(symbole)){
 
         actif = false;
 
-        if(symbole === "X") scoreX++;
-        else scoreO++;
+        if(symbole === "X"){
+            scoreX++;
+        }else{
+            scoreO++;
+        }
 
         updateScore();
 
@@ -162,48 +204,66 @@ function faireCoup(i, symbole){
     }
 
     joueurActuel = (symbole === "X") ? "O" : "X";
+
+    document.getElementById("message")
+    .innerText = "Tour : " + joueurActuel;
 }
 
 function ordinateur(){
 
     if(!actif) return;
 
-    // IA simple intelligente
     let move = bestMove();
 
-    faireCoup(move, "O");
+    faireCoup(move,"O");
 }
 
 function bestMove(){
 
-    // 1. gagner si possible
+    // gagner si possible
     for(let i=0;i<9;i++){
+
         if(grille[i] === ""){
+
             grille[i] = "O";
-            if(checkWin("O")){
+
+            if(checkSimpleWin("O")){
+
                 grille[i] = "";
+
                 return i;
             }
+
             grille[i] = "";
         }
     }
 
-    // 2. bloquer X
+    // bloquer X
     for(let i=0;i<9;i++){
+
         if(grille[i] === ""){
+
             grille[i] = "X";
-            if(checkWin("X")){
+
+            if(checkSimpleWin("X")){
+
                 grille[i] = "";
+
                 return i;
             }
+
             grille[i] = "";
         }
     }
 
-    // 3. aléatoire
+    // choix aléatoire
     let vides = [];
+
     for(let i=0;i<9;i++){
-        if(grille[i] === "") vides.push(i);
+
+        if(grille[i] === ""){
+            vides.push(i);
+        }
     }
 
     return vides[Math.floor(Math.random()*vides.length)];
@@ -211,10 +271,38 @@ function bestMove(){
 
 function checkWin(s){
 
-    return combinaisons.some(c=>{
-        return grille[c[0]]===s &&
-               grille[c[1]]===s &&
-               grille[c[2]]===s;
+    for(let c of combinaisons){
+
+        if(
+            grille[c[0]] === s &&
+            grille[c[1]] === s &&
+            grille[c[2]] === s
+        ){
+
+            document.querySelectorAll(".case")[c[0]]
+            .classList.add("gagnant");
+
+            document.querySelectorAll(".case")[c[1]]
+            .classList.add("gagnant");
+
+            document.querySelectorAll(".case")[c[2]]
+            .classList.add("gagnant");
+
+            return true;
+        }
+    }
+
+    return false;
+}
+
+// vérifie victoire sans animation
+function checkSimpleWin(s){
+
+    return combinaisons.some(c => {
+
+        return grille[c[0]] === s &&
+               grille[c[1]] === s &&
+               grille[c[2]] === s;
     });
 }
 
@@ -224,16 +312,42 @@ function updateScore(){
     .innerText = "X : " + scoreX + " | O : " + scoreO;
 }
 
+function changerMode(){
+
+    modeIA = !modeIA;
+
+    if(modeIA){
+
+        document.getElementById("info")
+        .innerText = "Mode : Joueur vs Ordinateur";
+
+    }else{
+
+        document.getElementById("info")
+        .innerText = "Mode : Joueur vs Joueur";
+    }
+
+    reset();
+}
+
 function reset(){
 
     grille = ["","","","","","","","",""];
+
     actif = true;
+
     joueurActuel = "X";
 
     document.querySelectorAll(".case")
-    .forEach(c => c.innerText = "");
+    .forEach(c => {
 
-    document.getElementById("message").innerText = "";
+        c.innerText = "";
+
+        c.classList.remove("gagnant");
+    });
+
+    document.getElementById("message")
+    .innerText = "Tour : X";
 }
 
 </script>
