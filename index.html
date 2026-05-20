@@ -14,10 +14,30 @@ body{
     background:#1e1e2f;
     color:white;
     text-align:center;
+    transition:0.3s;
 }
 
 h1{
     margin-top:20px;
+}
+
+#menu{
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:#111827;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    z-index:10;
+}
+
+#menu h1{
+    font-size:50px;
+    margin-bottom:30px;
 }
 
 #info{
@@ -28,6 +48,12 @@ h1{
 #score{
     margin-top:10px;
     font-size:18px;
+}
+
+#timer{
+    margin-top:10px;
+    font-size:20px;
+    color:#ffeaa7;
 }
 
 #jeu{
@@ -53,10 +79,6 @@ h1{
 
 .case:hover{
     background:#3b3b55;
-}
-
-#gagnant{
-    color:white;
 }
 
 .gagnant{
@@ -90,8 +112,32 @@ button{
     margin-left:5px;
 }
 
+button:hover{
+    opacity:0.9;
+}
+
 #modeBtn{
     background:#0984e3;
+}
+
+select{
+    padding:10px;
+    border-radius:10px;
+    font-size:16px;
+}
+
+.light{
+    background:#f1f1f1;
+    color:black;
+}
+
+.light .case{
+    background:#dfe6e9;
+    color:black;
+}
+
+.light .case:hover{
+    background:#b2bec3;
 }
 
 </style>
@@ -99,11 +145,37 @@ button{
 
 <body>
 
+<!-- MENU -->
+
+<div id="menu">
+
+    <h1>XO GAME PRO</h1>
+
+    <button onclick="startGame()">
+        Jouer
+    </button>
+
+    <button onclick="toggleTheme()">
+        Mode Clair / Sombre
+    </button>
+
+    <br><br>
+
+    <select id="difficulty">
+        <option value="easy">IA Facile</option>
+        <option value="medium">IA Moyenne</option>
+        <option value="hard">IA Difficile</option>
+    </select>
+
+</div>
+
 <h1>Jeu XO Pro</h1>
 
 <div id="info">Mode : Joueur vs Ordinateur</div>
 
 <div id="score">X : 0 | O : 0</div>
+
+<div id="timer">Temps : 10</div>
 
 <div id="jeu"></div>
 
@@ -128,6 +200,12 @@ let scoreO = 0;
 
 let modeIA = true;
 
+let difficulty = "easy";
+
+let temps = 10;
+
+let interval;
+
 const combinaisons = [
     [0,1,2],[3,4,5],[6,7,8],
     [0,3,6],[1,4,7],[2,5,8],
@@ -148,6 +226,52 @@ for(let i=0;i<9;i++){
     div.onclick = jouer;
 
     jeu.appendChild(div);
+}
+
+function startGame(){
+
+    document.getElementById("menu").style.display = "none";
+
+    difficulty =
+    document.getElementById("difficulty").value;
+
+    lancerTimer();
+}
+
+function toggleTheme(){
+
+    document.body.classList.toggle("light");
+}
+
+function lancerTimer(){
+
+    clearInterval(interval);
+
+    temps = 10;
+
+    document.getElementById("timer")
+    .innerText = "Temps : " + temps;
+
+    interval = setInterval(()=>{
+
+        temps--;
+
+        document.getElementById("timer")
+        .innerText = "Temps : " + temps;
+
+        if(temps <= 0){
+
+            joueurActuel =
+            joueurActuel === "X" ? "O" : "X";
+
+            document.getElementById("message")
+            .innerText =
+            "Temps écoulé ! Tour : " + joueurActuel;
+
+            temps = 10;
+        }
+
+    },1000);
 }
 
 function jouer(e){
@@ -179,6 +303,8 @@ function faireCoup(i, symbole){
 
         actif = false;
 
+        clearInterval(interval);
+
         if(symbole === "X"){
             scoreX++;
         }else{
@@ -197,6 +323,8 @@ function faireCoup(i, symbole){
 
         actif = false;
 
+        clearInterval(interval);
+
         document.getElementById("message")
         .innerText = "Match nul !";
 
@@ -207,6 +335,8 @@ function faireCoup(i, symbole){
 
     document.getElementById("message")
     .innerText = "Tour : " + joueurActuel;
+
+    lancerTimer();
 }
 
 function ordinateur(){
@@ -220,7 +350,54 @@ function ordinateur(){
 
 function bestMove(){
 
-    // gagner si possible
+    let vides = [];
+
+    for(let i=0;i<9;i++){
+
+        if(grille[i] === ""){
+            vides.push(i);
+        }
+    }
+
+    // IA facile
+    if(difficulty === "easy"){
+
+        return vides[
+            Math.floor(Math.random()*vides.length)
+        ];
+    }
+
+    // IA moyenne
+    if(difficulty === "medium"){
+
+        if(Math.random() < 0.5){
+
+            for(let i=0;i<9;i++){
+
+                if(grille[i] === ""){
+
+                    grille[i] = "O";
+
+                    if(checkSimpleWin("O")){
+
+                        grille[i] = "";
+
+                        return i;
+                    }
+
+                    grille[i] = "";
+                }
+            }
+        }
+
+        return vides[
+            Math.floor(Math.random()*vides.length)
+        ];
+    }
+
+    // IA difficile
+
+    // gagner
     for(let i=0;i<9;i++){
 
         if(grille[i] === ""){
@@ -238,7 +415,7 @@ function bestMove(){
         }
     }
 
-    // bloquer X
+    // bloquer
     for(let i=0;i<9;i++){
 
         if(grille[i] === ""){
@@ -256,17 +433,12 @@ function bestMove(){
         }
     }
 
-    // choix aléatoire
-    let vides = [];
+    // centre
+    if(grille[4] === "") return 4;
 
-    for(let i=0;i<9;i++){
-
-        if(grille[i] === ""){
-            vides.push(i);
-        }
-    }
-
-    return vides[Math.floor(Math.random()*vides.length)];
+    return vides[
+        Math.floor(Math.random()*vides.length)
+    ];
 }
 
 function checkWin(s){
@@ -295,7 +467,7 @@ function checkWin(s){
     return false;
 }
 
-// vérifie victoire sans animation
+// vérifie victoire simple
 function checkSimpleWin(s){
 
     return combinaisons.some(c => {
@@ -337,6 +509,10 @@ function reset(){
     actif = true;
 
     joueurActuel = "X";
+
+    clearInterval(interval);
+
+    lancerTimer();
 
     document.querySelectorAll(".case")
     .forEach(c => {
